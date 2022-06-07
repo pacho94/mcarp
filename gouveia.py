@@ -1,8 +1,7 @@
 from gurobipy import *
 from numpy import split
 
-def F1(P, N, W, DEPOT, DUMPING_COST, R, A, AR, ER):
-    m = Model("MCARP")
+def F1(m, P, N, W, DEPOT, DUMPING_COST, R, A, AR, ER, All=False):
     x, y, f = {}, {}, {}  #intialize the decision variables
 
     #binary variables if arc i,j served at trip p
@@ -77,10 +76,13 @@ def F1(P, N, W, DEPOT, DUMPING_COST, R, A, AR, ER):
                             quicksum(x[i, j, p]*R[(i, j)]['trav_cost'] for (i, j) in R if j == DEPOT)*DUMPING_COST
                             for p in range(P)), GRB.MINIMIZE)
     m.update()
-    return m, x, y, f
+    if All:
+        return m, x, y, f
+    else:
+        return m
 
-def F1R(P, N, W, QT, DEPOT, DUMPING_COST, R, A, AR, ER):
-    m, x, y, f = F1(P, N, W, DEPOT, DUMPING_COST, R, A, AR, ER)
+def F1R(m, P, N, W, QT, DEPOT, DUMPING_COST, R, A, AR, ER, All=False):
+    m, x, y, f = F1(m, P, N, W, DEPOT, DUMPING_COST, R, A, AR, ER, All=True)
 
     m.addConstr(quicksum(quicksum(y[i, j, p] for (i, j) in A if i == DEPOT) +
                          quicksum(x[i, j, p] for (i, j) in R if i == DEPOT) for p in range(P)) >= int(QT/W))
@@ -103,7 +105,10 @@ def F1R(P, N, W, QT, DEPOT, DUMPING_COST, R, A, AR, ER):
                      quicksum(x[i, j, p + 1] for (i, j) in R if i == DEPOT)))
     m.update()
 
-    return m, x, y, f
+    if All:
+        return m, x, y, f
+    else:
+        return m
 
 def F2(P, N, W, QT, DEPOT, DUMPING_COST, R, A, AR, ER, All=False):
     m = Model("MCARP")
@@ -180,7 +185,7 @@ def F2(P, N, W, QT, DEPOT, DUMPING_COST, R, A, AR, ER, All=False):
     if All:
         return m, x, y, f, x_a, y_a, f_a
     else:
-        return m, x, y, f
+        return m
 
 def F2R(P, N, W, QT, DEPOT, DUMPING_COST, R, A, AR, ER):
     m, x, y, f, x_a, y_a, f_a = F2(P, N, W, QT, DEPOT, DUMPING_COST, R, A, AR, ER, All=True)
@@ -197,4 +202,4 @@ def F2R(P, N, W, QT, DEPOT, DUMPING_COST, R, A, AR, ER):
         m.addConstr(f_a[i, j] >= y_a[i, j] - P)
     m.update()
 
-    return m, x, y, f
+    return m

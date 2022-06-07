@@ -1,14 +1,18 @@
+import gurobipy
 import pandas as pd
 import numpy as np
+
+import json
+import belenguer
 import gouveia
 import belenguefread
-from matplotlib import pyplot as plt
 from gurobipy import *
-from numpy import split
 from tkinter import Tk
 from tkinter.filedialog import askopenfilename
 
 #popup dialog for file
+import kernelsearch
+
 Tk().withdraw()
 filename = askopenfilename()
 
@@ -65,5 +69,9 @@ for (i, j) in AR:
 for (i, j) in ER:
     QT = QT + ER[(i, j)]['demand']
 
-m, x, y, f = gouveia.F1R(P, N, W, QT, DEPOT, DUMPING_COST, R, A, AR, ER)
-m.optimize()
+with gurobipy.Env(empty=True) as env:
+    env.setParam('OutputFlag', 0)
+    env.start()
+    with gurobipy.Model(env=env) as m:
+        m = gouveia.F1R(m, P, N, W, QT, DEPOT, DUMPING_COST, R, A, AR, ER)
+        time_elapsed = kernelsearch.startKernelSearch(m, "y", 200, 50, 0, 1, 3600, 5, 5)
