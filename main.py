@@ -70,7 +70,6 @@ for (i, j) in ER:
     QT = QT + ER[(i, j)]['demand']
 
 with gurobipy.Env(empty=True) as env:
-    env.setParam('OutputFlag', 0)
     env.start()
     with gurobipy.Model(env=env) as m:
         m = gouveia.F1R(m, P, N, W, QT, DEPOT, DUMPING_COST, R, A, AR, ER)

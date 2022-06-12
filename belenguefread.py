@@ -26,7 +26,10 @@ def readFile(filename):
                     costs = dict()
                     for n in range(1, len(splittedArcLine), 2): #create dictionary with cost_name:value
                         if not splittedArcLine[n].isspace():
-                            costs[splittedArcLine[n].strip()] = int(splittedArcLine[n+1].strip())
+                            if splittedArcLine[n].strip() == 'trav_cost':
+                                costs['cost'] = int(splittedArcLine[n+1].strip())
+                            else:
+                                costs[splittedArcLine[n].strip()] = int(splittedArcLine[n+1].strip())
                     ii, jj = fromParenthesisToIndex(splittedArcLine[0].strip())
                     arcs[(ii-1, jj-1)] = costs #add costs to arc in tuples fashion
                 data[tag] = arcs #add all to tag name ex: REQ_ARCS

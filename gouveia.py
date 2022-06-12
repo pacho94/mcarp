@@ -38,18 +38,20 @@ def F1(m, P, N, W, DEPOT, DUMPING_COST, R, A, AR, ER, All=False):
         m.addConstr(quicksum((x[i, j, p] + x[j, i, p]) for p in range(P)) == 1)
     m.update()
 
+    # Serve?
     # (5) constraints that implies that the dump cost is adequately charged in the objective function
-    for p in range(P):
-        m.addConstr((quicksum((x[i, j, p]) for (i, j) in R if i == DEPOT) +
-                     quicksum((y[i, j, p]) for (i, j) in A if i == DEPOT)) <= 1)
-    m.update()
+    # for p in range(P):
+    #     m.addConstr((quicksum((x[i, j, p]) for (i, j) in R if i == DEPOT) +
+    #                  quicksum((y[i, j, p]) for (i, j) in A if i == DEPOT)) <= 1)
+    # m.update()
 
     # (6) flow conservation constraints
     for ir in range(N):
-        for p in range(P):
-            m.addConstr((quicksum((f[j, i, p]) for (j, i) in A if i == ir and ir != DEPOT) -
-                         quicksum((f[i, j, p]) for (i, j) in A if i == ir and ir != DEPOT)) ==
-                        quicksum((R[(j, i)]['demand']*x[j, i, p]) for (j, i) in R if i == ir and ir != DEPOT))
+        if ir != DEPOT:
+            for p in range(P):
+                m.addConstr((quicksum((f[j, i, p]) for (j, i) in A if i == ir) -
+                             quicksum((f[i, j, p]) for (i, j) in A if i == ir)) ==
+                            quicksum((R[(j, i)]['demand']*x[j, i, p]) for (j, i) in R if i == ir))
     m.update()
 
     # (7) flow conservation constraints
@@ -67,13 +69,17 @@ def F1(m, P, N, W, DEPOT, DUMPING_COST, R, A, AR, ER, All=False):
     # (9)  linking constraints
     for (i, j) in A:
         for p in range(P):
-            m.addConstr(f[i, j, p] <= W*(x[i, j, p] + y[i, j, p]))
+            if (i, j) in R:
+                m.addConstr(f[i, j, p] <= W*(x[i, j, p] + y[i, j, p]))
+            else:
+                m.addConstr(f[i, j, p] <= W*(y[i, j, p]))
+
     m.update()
 
     m.setObjective(quicksum(quicksum(x[i, j, p]*R[(i, j)]['serv_cost'] for (i, j) in R) +
-                            quicksum(y[i, j, p]*R[(i, j)]['trav_cost'] for (i, j) in A) +
-                            quicksum(y[i, j, p]*R[(i, j)]['trav_cost'] for (i, j) in A if j == DEPOT)*DUMPING_COST +
-                            quicksum(x[i, j, p]*R[(i, j)]['trav_cost'] for (i, j) in R if j == DEPOT)*DUMPING_COST
+                            quicksum(y[i, j, p]*A[(i, j)]['cost'] for (i, j) in A) +
+                            quicksum(y[i, j, p] for (i, j) in A if j == DEPOT)*DUMPING_COST +
+                            quicksum(x[i, j, p] for (i, j) in R if j == DEPOT)*DUMPING_COST
                             for p in range(P)), GRB.MINIMIZE)
     m.update()
     if All:
